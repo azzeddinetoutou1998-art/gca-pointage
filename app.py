@@ -416,7 +416,17 @@ def export(kind):
 
 
 # ---------------------------------------------------------------- gabarits
-from templates_html import TEMPLATES  # noqa: E402
+import base64  # noqa: E402
+from templates_html import LOGO_B64, TEMPLATES  # noqa: E402
+
+LOGO_PNG = base64.b64decode(LOGO_B64)
+
+
+@app.get("/logo.png")
+def logo():
+    return Response(LOGO_PNG, mimetype="image/png",
+                    headers={"Cache-Control": "public, max-age=86400"})
+
 
 app.jinja_loader = DictLoader(TEMPLATES)
 init_db()
