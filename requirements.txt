@@ -1,0 +1,4 @@
+flask>=3.0
+gunicorn>=21.2
+tzdata
+openpyxl>=3.1
