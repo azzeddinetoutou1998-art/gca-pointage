@@ -132,7 +132,7 @@ DASHBOARD = r"""{% extends "base.html" %}
     <label>Du<input type="date" name="from" value="{{ d_from }}"></label>
     <label>Au<input type="date" name="to" value="{{ d_to }}"></label>
     <label>Salarié<select name="emp"><option value="">Tous</option>
-      {% for e in emps %}<option value="{{ e.id }}" {{ 'selected' if e.id==emp_id }}>{{ e.name }} ({{ e.code }})</option>{% endfor %}</select></label>
+      {% for e in emps %}<option value="{{ e.id }}" {{ 'selected' if e.id==emp_id }}>{{ e.name }}{{ e.code|cdp }}</option>{% endfor %}</select></label>
     <button class="b" type="submit">Filtrer</button>
     <a class="g" href="{{ url_for('export', kind='detail') }}?from={{ d_from }}&to={{ d_to }}&emp={{ emp_id or '' }}&site={{ site|urlencode }}&sub={{ sub|urlencode }}">⬇ Export détail (CSV)</a>
     <a class="g" href="{{ url_for('export', kind='recap') }}?from={{ d_from }}&to={{ d_to }}&emp={{ emp_id or '' }}&site={{ site|urlencode }}&sub={{ sub|urlencode }}">⬇ Export récap. heures (CSV)</a>
@@ -143,12 +143,12 @@ DASHBOARD = r"""{% extends "base.html" %}
 </div>
 <div class="card"><h2>Récapitulatif des heures</h2><p style="margin:0 0 10px"><input class="tsearch" type="search" placeholder="🔍 Rechercher un salarié (nom, code, poste, site…)" autocomplete="off" style="width:100%;max-width:420px;padding:10px"> <span class="tcount mu" style="font-size:13px"></span></p><div class="sc"><table>
   <tr><th>Code</th><th>Salarié</th><th>Jours</th><th>Total</th><th>Heures déc.</th><th>H. supp.</th><th>Paniers</th><th>Quart</th><th>Tickets</th><th>Abs.</th><th>Sans départ</th><th></th></tr>
-  {% for o in totals %}<tr><td>{{ o.code }}</td><td><a href="{{ url_for('employee_page', eid=o.eid) }}">{{ o.name }}</a></td><td>{{ o.days }}</td><td>{{ o.sec|dur_hm }}</td><td>{{ o.sec|dur_dec }}</td><td>{{ o.over|dur_hm }}</td><td>{{ o.panier }}</td><td>{{ o.quart }}</td><td>{{ o.ticket }}</td><td>{{ o.abs_days or '' }}</td><td>{{ o.open or '' }}</td><td><a href="{{ url_for('dashboard') }}?from={{ d_from }}&to={{ d_to }}&emp={{ o.eid }}">Filtrer</a></td></tr>
+  {% for o in totals %}<tr><td>{{ o.code|cd }}</td><td><a href="{{ url_for('employee_page', eid=o.eid) }}">{{ o.name }}</a></td><td>{{ o.days }}</td><td>{{ o.sec|dur_hm }}</td><td>{{ o.sec|dur_dec }}</td><td>{{ o.over|dur_hm }}</td><td>{{ o.panier }}</td><td>{{ o.quart }}</td><td>{{ o.ticket }}</td><td>{{ o.abs_days or '' }}</td><td>{{ o.open or '' }}</td><td><a href="{{ url_for('dashboard') }}?from={{ d_from }}&to={{ d_to }}&emp={{ o.eid }}">Filtrer</a></td></tr>
   {% else %}<tr><td colspan="12" class="mu">Aucun salarié.</td></tr>{% endfor %}
 </table></div></div>
 <div class="card"><h2>Détail des pointages ({{ sessions|length }})</h2><p style="margin:0 0 10px"><input class="tsearch" type="search" placeholder="🔍 Rechercher un salarié (nom, code, poste, site…)" autocomplete="off" style="width:100%;max-width:420px;padding:10px"> <span class="tcount mu" style="font-size:13px"></span></p><div class="sc"><table>
   <tr><th>Code</th><th>Salarié</th><th>Date</th><th>Arrivée</th><th>Départ</th><th>Durée</th></tr>
-  {% for s in sessions %}<tr><td>{{ s.code }}</td><td>{{ s.name }}</td><td>{{ s.start|dfr }}</td>
+  {% for s in sessions %}<tr><td>{{ s.code|cd }}</td><td>{{ s.name }}</td><td>{{ s.start|dfr }}</td>
     <td>{{ s.start|hm }}
       <form class="inline" method="post" action="{{ url_for('punch_delete', pid=s.in_id) }}" onsubmit="return confirm('Supprimer ce pointage d\'arrivée ?')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="x" title="Supprimer">×</button></form></td>
     <td>{% if s.end %}{{ s.end|hm }}
@@ -160,7 +160,7 @@ DASHBOARD = r"""{% extends "base.html" %}
 <div class="card"><h2>Ajouter / corriger un pointage manuellement</h2>
   <form method="post" action="{{ url_for('punch_add') }}" class="row">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label>Salarié<select name="emp" required>{% for e in emps if e.active %}<option value="{{ e.id }}">{{ e.name }} ({{ e.code }})</option>{% endfor %}</select></label>
+    <label>Salarié<select name="emp" required>{% for e in emps if e.active %}<option value="{{ e.id }}">{{ e.name }}{{ e.code|cdp }}</option>{% endfor %}</select></label>
     <label>Date<input type="date" name="date" value="{{ today }}" required></label>
     <label>Heure<input type="time" name="time" required></label>
     <label>Type<select name="type"><option value="in">Arrivée</option><option value="out">Départ</option></select></label>
@@ -180,7 +180,7 @@ MACROS = r"""{% macro listfield(name, label, values, cur, newlabel) %}
 {% macro emp_fields(e, opts, contrats, horaires, code_default='', site_default='', sub_default='') %}
 <div class="row">
   <label>Nom complet<input name="name" value="{{ e.name if e else '' }}" required maxlength="80" placeholder="Ex. Marie Dupont"></label>
-  <label>Code de pointage<input name="code" value="{{ e.code if e else code_default }}" required maxlength="30" style="text-transform:uppercase"></label>
+  <label>Code de pointage<input name="code" value="{{ (e.code|cd) if e else code_default }}" maxlength="30" style="text-transform:uppercase" placeholder="Facultatif pour Aytré"></label>
 </div>
 <div class="row" style="margin-top:10px">
   {{ listfield('site', 'Site', opts.site, e.site if e else site_default, 'ou nouveau site') }}
@@ -248,7 +248,7 @@ EMPLOYEES = r"""{% extends "base.html" %}
 <div class="card"><h2>Salariés – {{ site_label }}{% if sub_label %} – {{ sub_label }}{% endif %} ({{ emps|length }})</h2><p style="margin:0 0 10px"><input class="tsearch" type="search" placeholder="🔍 Rechercher un salarié (nom, code, poste…)" autocomplete="off" style="width:100%;max-width:420px;padding:10px"> <span class="tcount mu" style="font-size:13px"></span></p><p style="margin:0 0 10px"><a class="b" style="background:#1a8f4c" href="{{ url_for('export_xlsx') }}?only=salaries&site={{ site|urlencode }}&sub={{ (sub or '')|urlencode }}">⬇ Exporter la liste des salariés{% if site not in ('__all__',) %} – {{ site_label }}{% endif %} (Excel)</a></p><div class="sc"><table class="wrap">
   <tr><th>Code</th><th>Nom</th><th>Site</th><th>Activité</th><th>Bâtiment</th><th>Poste</th><th>Contrat</th><th>Horaire</th><th>Panier / Quart / Tickets</th><th>Statut</th><th></th></tr>
   {% for e in emps %}{% set b = shift_bonus(e.horaire) %}<tr>
-    <td><b>{{ e.code }}</b></td>
+    <td><b>{{ e.code|cd }}</b></td>
     <td><a href="{{ url_for('employee_page', eid=e.id) }}">{{ e.name }}</a></td>
     <td>{{ e.site }}</td><td>{{ e.activite }}</td><td>{{ e.sous_activite }}</td><td>{{ e.poste }}</td><td>{{ e.contrat }}</td><td>{{ e.horaire }}</td>
     <td>{% if b %}{{ b[0] }} / {{ b[1] }} / {{ b[2] }}{% else %}<span class="mu">—</span>{% endif %}</td>
@@ -293,7 +293,7 @@ EMPLOYEE = r"""{% extends "base.html" %}
 {% from "macros.html" import emp_fields %}
 {% set active='emps' %}""" + NAV + r"""
 <p style="margin:0 0 10px"><a href="{{ url_for('employees') }}">← Tous les salariés</a></p>
-<div class="card"><h2>Dossier : {{ e.name }} <span class="mu">({{ e.code }})</span>{% if not e.active %} <span class="err">désactivé</span>{% endif %}</h2>
+<div class="card"><h2>Dossier : {{ e.name }} <span class="mu">{{ e.code|cdp }}</span>{% if not e.active %} <span class="err">désactivé</span>{% endif %}</h2>
   {% if error %}<p class="err">{{ error }}</p>{% endif %}
   {% if info %}<p class="okc">✓ {{ info }}</p>{% endif %}
   <form method="post" action="{{ url_for('employee_update', eid=e.id) }}">
@@ -305,7 +305,7 @@ EMPLOYEE = r"""{% extends "base.html" %}
 {% set b = shift_bonus(e.horaire) %}
 <div class="card" id="transfert"><h2>Transférer vers une autre activité ou un autre site</h2>
   <p class="mu" style="margin-top:0">Situation actuelle : <b>{{ e.activite or '—' }}</b>{% if e.sous_activite %} ({{ e.sous_activite }}){% endif %} · {{ e.site or '—' }} · {{ e.poste or '—' }} · {{ e.horaire or '—' }}.
-  Choisissez la nouvelle affectation : le salarié change aussitôt de liste. Son <b>code de pointage ({{ e.code }}) ne change pas</b>, ni son historique. Laissez « Inchangé » pour ce qui ne bouge pas.</p>
+  Choisissez la nouvelle affectation : le salarié change aussitôt de liste. {% if e.code|cd %}Son <b>code de pointage ({{ e.code }}) ne change pas</b>{% else %}Il n'a pas de code de pointage{% endif %}, ni son historique. Laissez « Inchangé » pour ce qui ne bouge pas.</p>
   <form method="post" action="{{ url_for('employee_transfer', eid=e.id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="row">
@@ -391,10 +391,10 @@ EMPLOYEE = r"""{% extends "base.html" %}
   {% else %}<tr><td colspan="3" class="mu">Aucun jour particulier saisi.</td></tr>{% endfor %}</table></div>
 </div>
 <div class="card" id="supprimer" style="border-color:var(--ko)"><h2>Supprimer ce salarié</h2>
-  <p class="mu" style="margin-top:0">Suppression <b>définitive</b> de {{ e.name }} ({{ e.code }}) et de toutes ses données : pointages, absences, jours saisis et historique. Elle disparaît aussi de toutes les extractions, y compris des mois passés. <b>Téléchargez d'abord vos exports.</b> Pour simplement arrêter les pointages en gardant l'historique, utilisez plutôt « Désactiver » dans la liste des salariés.</p>
+  <p class="mu" style="margin-top:0">Suppression <b>définitive</b> de {{ e.name }}{{ e.code|cdp }} et de toutes ses données : pointages, absences, jours saisis et historique. Elle disparaît aussi de toutes les extractions, y compris des mois passés. <b>Téléchargez d'abord vos exports.</b> Pour simplement arrêter les pointages en gardant l'historique, utilisez plutôt « Désactiver » dans la liste des salariés.</p>
   <form method="post" action="{{ url_for('employee_delete', eid=e.id) }}" class="row">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label>Pour confirmer, tapez le code : <b>{{ e.code }}</b><input name="confirm" required autocomplete="off" style="text-transform:uppercase"></label>
+    <label>Pour confirmer, tapez : <b>{{ (e.code|cd) or 'SUPPRIMER' }}</b><input name="confirm" required autocomplete="off" style="text-transform:uppercase"></label>
     <button class="b" type="submit" style="background:var(--ko)">Supprimer définitivement</button>
   </form>
 </div>
