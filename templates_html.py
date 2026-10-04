@@ -126,9 +126,9 @@ DASHBOARD = r"""{% extends "base.html" %}
     <label>Site<select name="site" onchange="this.form.elements.emp.value='';if(this.form.elements.sub)this.form.elements.sub.value='';this.form.submit()"><option value="">Tous les sites</option>
       {% for n in site_names %}<option value="{{ n }}" {{ 'selected' if n|lower == site|lower }}>{{ n }}</option>{% endfor %}
       <option value="__none__" {{ 'selected' if site == '__none__' }}>Sans site</option></select></label>
-    {% if uses_sub %}<label>Sous-activité<select name="sub" onchange="this.form.elements.emp.value='';this.form.submit()"><option value="">Toutes les sous-activités</option>
+    {% if uses_sub %}<label>Bâtiment<select name="sub" onchange="this.form.elements.emp.value='';this.form.submit()"><option value="">Tous les bâtiments</option>
       {% for n in sub_names %}<option value="{{ n }}" {{ 'selected' if n|lower == sub|lower }}>{{ n }}</option>{% endfor %}
-      <option value="__none__" {{ 'selected' if sub == '__none__' }}>Sans sous-activité</option></select></label>{% endif %}
+      <option value="__none__" {{ 'selected' if sub == '__none__' }}>Sans bâtiment</option></select></label>{% endif %}
     <label>Du<input type="date" name="from" value="{{ d_from }}"></label>
     <label>Au<input type="date" name="to" value="{{ d_to }}"></label>
     <label>Salarié<select name="emp"><option value="">Tous</option>
@@ -185,7 +185,7 @@ MACROS = r"""{% macro listfield(name, label, values, cur, newlabel) %}
 <div class="row" style="margin-top:10px">
   {{ listfield('site', 'Site', opts.site, e.site if e else site_default, 'ou nouveau site') }}
   {{ listfield('activite', 'Activité', opts.activite, e.activite if e else '', 'ou nouvelle activité') }}
-  {{ listfield('sous_activite', 'Sous-activité', opts.sous_activite, e.sous_activite if e else sub_default, 'ou nouvelle sous-activité') }}
+  {{ listfield('sous_activite', 'Bâtiment', opts.sous_activite, e.sous_activite if e else sub_default, 'ou nouveau bâtiment') }}
   {{ listfield('poste', 'Poste', opts.poste, e.poste if e else '', 'ou nouveau poste') }}
 </div>
 <div class="row" style="margin-top:10px">
@@ -218,8 +218,8 @@ EMPLOYEES = r"""{% extends "base.html" %}
 {% else %}
 {% if need_sub %}
 <p style="margin:0 0 10px"><a class="g" style="padding:8px 14px" href="{{ url_for('employees') }}">← Changer de site</a></p>
-<div class="card"><h2>{{ site_label }} : choisissez une sous-activité</h2>
-  <p class="mu" style="margin-top:0">Pour ce site, sélectionnez d'abord la sous-activité pour voir son personnel, ajouter un salarié ou ouvrir un dossier.</p>
+<div class="card"><h2>{{ site_label }} : choisissez un bâtiment</h2>
+  <p class="mu" style="margin-top:0">Pour ce site, sélectionnez d'abord le bâtiment pour voir son personnel, ajouter un salarié ou ouvrir un dossier.</p>
   {% if error %}<p class="err">{{ error }}</p>{% endif %}
   {% if info %}<p class="okc">✓ {{ info }}</p>{% endif %}
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
@@ -227,13 +227,13 @@ EMPLOYEES = r"""{% extends "base.html" %}
       <div style="font-size:19px;font-weight:700">{{ s.name }}</div>
       <div class="mu">{{ s.n }} salarié{{ 's' if s.n > 1 }} actif{{ 's' if s.n > 1 }}{% if s.total > s.n %} · {{ s.total - s.n }} désactivé(s){% endif %}</div></a>{% endfor %}
     {% if n_nosub %}<a href="{{ url_for('employees', site=site, sub='__none__') }}" style="text-decoration:none;border:1px dashed #999;border-radius:12px;padding:16px;display:block;color:inherit">
-      <div style="font-size:19px;font-weight:700">Sans sous-activité</div><div class="mu">{{ n_nosub }} salarié(s) à rattacher</div></a>{% endif %}
+      <div style="font-size:19px;font-weight:700">Sans bâtiment</div><div class="mu">{{ n_nosub }} salarié(s) à rattacher</div></a>{% endif %}
     <a href="{{ url_for('employees', site=site, sub='__all__') }}" style="text-decoration:none;border:1px solid #999;border-radius:12px;padding:16px;display:block;color:inherit">
-      <div style="font-size:19px;font-weight:700">Toutes les sous-activités</div><div class="mu">Tout le personnel de {{ site_label }}</div></a>
+      <div style="font-size:19px;font-weight:700">Tous les bâtiments</div><div class="mu">Tout le personnel de {{ site_label }}</div></a>
   </div>
 </div>
 {% else %}
-<p style="margin:0 0 10px"><a class="g" style="padding:8px 14px" href="{{ url_for('employees') }}">← Changer de site</a>{% if sub %} <a class="g" style="padding:8px 14px" href="{{ url_for('employees', site=site) }}">← Changer de sous-activité</a>{% endif %}</p>
+<p style="margin:0 0 10px"><a class="g" style="padding:8px 14px" href="{{ url_for('employees') }}">← Changer de site</a>{% if sub %} <a class="g" style="padding:8px 14px" href="{{ url_for('employees', site=site) }}">← Changer de bâtiment</a>{% endif %}</p>
 <div class="card"><h2>Ajouter un salarié{% if site not in ('__all__','__none__') %} – {{ site_label }}{% endif %}</h2>
   <form method="post" action="{{ url_for('employee_add') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -246,7 +246,7 @@ EMPLOYEES = r"""{% extends "base.html" %}
   {% if info %}<p class="okc">✓ {{ info }}</p>{% endif %}
 </div>
 <div class="card"><h2>Salariés – {{ site_label }}{% if sub_label %} – {{ sub_label }}{% endif %} ({{ emps|length }})</h2><p style="margin:0 0 10px"><input class="tsearch" type="search" placeholder="🔍 Rechercher un salarié (nom, code, poste…)" autocomplete="off" style="width:100%;max-width:420px;padding:10px"> <span class="tcount mu" style="font-size:13px"></span></p><p style="margin:0 0 10px"><a class="b" style="background:#1a8f4c" href="{{ url_for('export_xlsx') }}?only=salaries&site={{ site|urlencode }}&sub={{ (sub or '')|urlencode }}">⬇ Exporter la liste des salariés{% if site not in ('__all__',) %} – {{ site_label }}{% endif %} (Excel)</a></p><div class="sc"><table class="wrap">
-  <tr><th>Code</th><th>Nom</th><th>Site</th><th>Activité</th><th>Sous-activité</th><th>Poste</th><th>Contrat</th><th>Horaire</th><th>Panier / Quart / Tickets</th><th>Statut</th><th></th></tr>
+  <tr><th>Code</th><th>Nom</th><th>Site</th><th>Activité</th><th>Bâtiment</th><th>Poste</th><th>Contrat</th><th>Horaire</th><th>Panier / Quart / Tickets</th><th>Statut</th><th></th></tr>
   {% for e in emps %}{% set b = shift_bonus(e.horaire) %}<tr>
     <td><b>{{ e.code }}</b></td>
     <td><a href="{{ url_for('employee_page', eid=e.id) }}">{{ e.name }}</a></td>
@@ -311,8 +311,8 @@ EMPLOYEE = r"""{% extends "base.html" %}
     <div class="row">
       <label>Nouvelle activité<select name="activite"><option value="">Inchangé</option>{% for v in opts.activite if v != e.activite %}<option value="{{ v }}">{{ v }}</option>{% endfor %}</select></label>
       <label>ou nouvelle activité<input name="activite_new" placeholder="Créer…" maxlength="60"></label>
-      <label>Nouvelle sous-activité<select name="sous_activite"><option value="">Inchangé</option>{% for v in opts.sous_activite if v != e.sous_activite %}<option value="{{ v }}">{{ v }}</option>{% endfor %}</select></label>
-      <label>ou nouvelle sous-activité<input name="sous_activite_new" placeholder="Créer…" maxlength="60"></label>
+      <label>Nouveau bâtiment<select name="sous_activite"><option value="">Inchangé</option>{% for v in opts.sous_activite if v != e.sous_activite %}<option value="{{ v }}">{{ v }}</option>{% endfor %}</select></label>
+      <label>ou nouveau bâtiment<input name="sous_activite_new" placeholder="Créer…" maxlength="60"></label>
       <label>Nouveau site<select name="site"><option value="">Inchangé</option>{% for v in opts.site if v != e.site %}<option value="{{ v }}">{{ v }}</option>{% endfor %}</select></label>
       <label>ou nouveau site<input name="site_new" placeholder="Créer…" maxlength="60"></label>
     </div>
